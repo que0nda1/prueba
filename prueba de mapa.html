@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mapa con Coordenadas Correctas</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map { height: 400px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <button id="btn-geolocation">📍 Mi ubicación</button>
+    <p id="coords-display">Coordenadas: Lat: <span id="lat"></span>, Lng: <span id="lng"></span></p>
+
+    <script>
+        const map = L.map('map').setView([-12.0464, -77.0428], 12); // Lima, Perú
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        let marker = null;
+
+        // Función para actualizar coordenadas en el popup y en el HTML
+        function updateCoords(lat, lng) {
+            // Mostrar en el popup del marcador
+            if (marker) {
+                marker.setPopupContent(`
+                    <b>Ubicación actual</b><br>
+                    Lat: ${lat.toFixed(6)}<br>
+                    Lng: ${lng.toFixed(6)}
+                `).openPopup();
+            }
+
+            // Mostrar en el elemento HTML (opcional)
+            document.getElementById('lat').textContent = lat.toFixed(6);
+            document.getElementById('lng').textContent = lng.toFixed(6);
+        }
+
+        // Botón de geolocalización
+        document.getElementById('btn-geolocation').addEventListener('click', () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+
+                        // Eliminar marcador anterior (si existe)
+                        if (marker) map.removeLayer(marker);
+
+                        // Crear nuevo marcador
+                        marker = L.marker([lat, lng], {
+                            draggable: true
+                        }).addTo(map);
+
+                        // Actualizar coordenadas iniciales
+                        updateCoords(lat, lng);
+
+                        // Evento al arrastrar el marcador
+                        marker.on('dragend', () => {
+                            const newPos = marker.getLatLng();
+                            updateCoords(newPos.lat, newPos.lng);
+                        });
+
+                        // Centrar el mapa en la ubicación
+                        map.setView([lat, lng], 16);
+                    },
+                    (err) => alert("Error: " + err.message)
+                );
+            } else {
+                alert("Geolocalización no soportada en tu navegador.");
+            }
+        });
+    </script>
+</body>
+</html>
